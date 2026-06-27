@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seleção de Trechos — Energisa Tocantins</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+
+  #header {
+    background: #1a2e1a; color: #fff; padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px; z-index: 1000; position: relative;
+  }
+  #header h1 { font-size: 16px; font-weight: 700; }
+  #header p  { font-size: 11px; color: #8bc34a; }
+
+  #layout { display: flex; height: calc(100vh - 56px); }
+
+  /* PAINEL LATERAL */
+  #painel {
+    width: 300px; flex-shrink: 0;
+    background: #fff; border-right: 1px solid #ddd;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  #painel-header {
+    padding: 12px; background: #f5f5f5; border-bottom: 1px solid #ddd;
+    font-size: 12px; font-weight: 700; color: #333;
+  }
+  #painel-header span { color: #888; font-weight: 400; }
+
+  /* FILTRO */
+  #filtro-bar {
+    padding: 10px 12px; border-bottom: 1px solid #eee;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .filtro-label { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.06em; }
+  #busca-alim { width: 100%; padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px; }
+  .toggle-row { display: flex; gap: 6px; }
+  .toggle-btn {
+    flex: 1; padding: 6px 4px; border: 1.5px solid #ddd; border-radius: 6px;
+    font-size: 11px; font-weight: 600; background: #f9f9f9; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .toggle-btn.on { border-color: currentColor; background: currentColor; color: #fff !important; }
+  .toggle-btn.t1 { color: #c62828; }
+  .toggle-btn.t2 { color: #e65100; }
+  .toggle-btn.ch { color: #1565C0; }
+
+  /* LISTA DE ALIMENTADORES */
+  #lista { overflow-y: auto; flex: 1; }
+  .alim-item {
+    padding: 10px 12px; border-bottom: 1px solid #f0f0f0;
+    cursor: pointer; transition: background 0.12s;
+  }
+  .alim-item:hover { background: #f5f5f5; }
+  .alim-item.ativo { background: #e8f5e9; border-left: 3px solid #2e7d32; }
+  .alim-nome { font-size: 12px; font-weight: 700; color: #1a2e1a; }
+  .alim-info { font-size: 10px; color: #888; margin-top: 2px; }
+  .alim-badges { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+  .badge {
+    font-size: 9px; padding: 2px 6px; border-radius: 3px;
+    font-weight: 700; border: 1px solid;
+  }
+  .badge.polo  { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
+  .badge.t1cnt { background: #ffebee; color: #c62828; border-color: #ef9a9a; }
+  .badge.t2cnt { background: #fff3e0; color: #e65100; border-color: #ffcc80; }
+  .badge.chcnt { background: #e3f2fd; color: #1565C0; border-color: #90caf9; }
+
+  /* EXPORTAR */
+  #exportar-bar {
+    padding: 10px 12px; border-top: 1px solid #ddd; background: #f9f9f9;
+  }
+  .btn-export {
+    width: 100%; padding: 9px; background: #2e7d32; color: #fff;
+    border: none; border-radius: 7px; font-size: 12px; font-weight: 700;
+    cursor: pointer; margin-bottom: 5px; font-family: inherit;
+  }
+  .btn-export:hover { background: #1b5e20; }
+  .btn-export.kml { background: #1565C0; }
+  .btn-export.kml:hover { background: #0d47a1; }
+  #export-info { font-size: 10px; color: #888; text-align: center; }
+
+  /* MAPA */
+  #map { flex: 1; }
+
+  /* LEGENDA */
+  #legenda {
+    position: absolute; bottom: 24px; right: 10px; z-index: 900;
+    background: rgba(255,255,255,0.95); border-radius: 8px;
+    padding: 10px 14px; font-size: 11px; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    min-width: 160px;
+  }
+  #legenda h4 { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 7px; }
+  .leg-item { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+  .leg-line { width: 24px; height: 3px; border-radius: 2px; }
+  .leg-dot  { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #888; }
+
+  /* LOADING */
+  #loading {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    z-index: 2000; background: rgba(255,255,255,0.95); border-radius: 12px;
+    padding: 24px 32px; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+    font-size: 14px; color: #333;
+  }
+  #loading-bar { width: 200px; height: 4px; background: #eee; border-radius: 2px; margin: 12px auto 0; overflow: hidden; }
+  #loading-fill { height: 100%; background: #2e7d32; border-radius: 2px; transition: width 0.3s; width: 0%; }
+
+  @media (max-width: 640px) {
+    #painel { width: 100%; position: absolute; bottom: 0; z-index: 900; max-height: 40vh; }
+    #map { width: 100%; }
+    #layout { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <h1>Seleção de Trechos — Rede MT</h1>
+    <p>Energisa Tocantins · 11 alimentadores · Visualização T1/T2</p>
+  </div>
+</div>
+
+<div id="layout">
+  <!-- PAINEL -->
+  <div id="painel">
+    <div id="painel-header">
+      Alimentadores <span id="cont-alims"></span>
+    </div>
+
+    <div id="filtro-bar">
+      <div class="filtro-label">Filtrar</div>
+      <input id="busca-alim" type="text" placeholder="Buscar alimentador ou SE...">
+      <div class="toggle-row">
+        <button class="toggle-btn t1 on" id="tog-t1" onclick="toggleCamada('t1')">
+          <span>━</span> T1
+        </button>
+        <button class="toggle-btn t2 on" id="tog-t2" onclick="toggleCamada('t2')">
+          <span>━</span> T2
+        </button>
+        <button class="toggle-btn ch on" id="tog-ch" onclick="toggleCamada('ch')">
+          <span>●</span> Chaves
+        </button>
+      </div>
+    </div>
+
+    <div id="lista"></div>
+
+    <div id="exportar-bar">
+      <button class="btn-export" onclick="exportarKML()">Exportar KML</button>
+      <button class="btn-export kml" onclick="exportarCSV()">Exportar CSV</button>
+      <div id="export-info">Alimentadores selecionados serão exportados</div>
+    </div>
+  </div>
+
+  <!-- MAPA -->
+  <div id="map"></div>
+</div>
+
+<!-- LEGENDA -->
+<div id="legenda">
+  <h4>Legenda</h4>
+  <div class="leg-item"><div class="leg-line" style="background:#c62828;"></div><span>T1 — Tronco principal</span></div>
+  <div class="leg-item"><div class="leg-line" style="background:#e65100;height:2px;"></div><span>T2 — Ramal</span></div>
+  <div class="leg-item"><div class="leg-dot" style="background:#1565C0;"></div><span>Chaves / Religadores</span></div>
+  <div class="leg-item"><div class="leg-dot" style="background:#ff1744;border-color:#ff1744;"></div><span>Chaves selecionadas</span></div>
+</div>
+
+<!-- LOADING -->
+<div id="loading">
+  <div>Carregando dados da rede...</div>
+  <div id="loading-bar"><div id="loading-fill"></div></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ══════════════════════════════════════════════════
+// CHAVES ALVO (da lista do usuário)
+// ══════════════════════════════════════════════════
+const CHAVES_ALVO = new Set([
+  '300288233','3337667015','3300944193','300005077','300560149','320211011',
+  '301207087','310571052','8802271052','300734079','300514035','3320230001',
+  '3300410233','310565052','300522075','3300743233','300513086','3100491265',
+  '3310036079','8800831055','310636059','310212026','300328075','3300421233',
+  '8846927086','3300042024','3310079075','8825261001','3327488052','3300564075',
+  '330081079','3300671055','8815067086','3300272086','300427233','3100548018',
+  '3101323077','4000600070','7924622052','8821886122','219626149','4010107070',
+  '300879009','300466024','3301137084','3300989008','4000717113','301053055',
+  '3110026083','7900525015','327179149','320694122','4001176075','4000679075',
+  '4001181055','312402122','7955429075','307810070','4010017111','4000338024',
+  '8800585083','3300328008','300185034','4000480026','310008059','353950075',
+  '7923686078','4000637077','8800379070','7956373149','358297075','348264059',
+  '7942572059','8801320008','7910027196','300381083','4000235196','341155083',
+  '8846927086'
+]);
+
+// ══════════════════════════════════════════════════
+// MAPA
+// ══════════════════════════════════════════════════
+const map = L.map('map').setView([-9.8, -48.5], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
+
+const layers = {
+  t1: L.layerGroup().addTo(map),
+  t2: L.layerGroup().addTo(map),
+  ch: L.layerGroup().addTo(map),
+};
+const toggleState = { t1: true, t2: true, ch: true };
+
+// Por alimentador: bounds para zoom
+const alimBounds = {};
+let dadosMapa = {};
+let selecionados = new Set(); // alimentadores marcados no painel
+
+function toggleCamada(nome) {
+  toggleState[nome] = !toggleState[nome];
+  const btn = document.getElementById('tog-' + nome);
+  btn.classList.toggle('on', toggleState[nome]);
+  toggleState[nome] ? map.addLayer(layers[nome]) : map.removeLayer(layers[nome]);
+}
+
+function toggleAlim(circ) {
+  const el = document.getElementById('ai-' + circ);
+  if (selecionados.has(circ)) {
+    selecionados.delete(circ);
+    el.classList.remove('ativo');
+  } else {
+    selecionados.add(circ);
+    el.classList.add('ativo');
+    // Zoom para o alimentador
+    if (alimBounds[circ]) map.fitBounds(alimBounds[circ], { padding: [30,30] });
+  }
+  atualizarExportInfo();
+}
+
+function atualizarExportInfo() {
+  const n = selecionados.size;
+  document.getElementById('export-info').textContent =
+    n === 0 ? 'Nenhum selecionado (exporta todos)'
+    : n + ' alimentador(es) selecionado(s)';
+}
+
+// ══════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════
+function renderAlimentador(circ, dados) {
+  const bounds = [];
+
+  // T1
+  dados.t1.forEach(linha => {
+    const pts = linha.map(c => [c[1], c[0]]);
+    L.polyline(pts, { color: '#c62828', weight: 3, opacity: 0.85 }).addTo(layers.t1);
+    pts.forEach(p => bounds.push(p));
+  });
+  // T2
+  dados.t2.forEach(linha => {
+    const pts = linha.map(c => [c[1], c[0]]);
+    L.polyline(pts, { color: '#e65100', weight: 2, opacity: 0.8 }).addTo(layers.t2);
+    pts.forEach(p => bounds.push(p));
+  });
+  // Chaves
+  dados.chaves.forEach(c => {
+    const isAlvo = CHAVES_ALVO.has(c.nome);
+    const cor    = isAlvo ? '#ff1744' : '#1565C0';
+    const r      = isAlvo ? 7 : 5;
+    const popup  = `<b>${c.nome}</b><br>${circ}<br>${dados.se}` + (isAlvo ? '<br><b style="color:#ff1744">⚑ Chave selecionada</b>' : '');
+    L.circleMarker([c.lat, c.lon], {
+      radius: r, fillColor: cor, color: '#fff', weight: 2, fillOpacity: isAlvo ? 1 : 0.8
+    }).bindPopup(popup).addTo(layers.ch);
+    bounds.push([c.lat, c.lon]);
+  });
+
+  if (bounds.length) alimBounds[circ] = L.latLngBounds(bounds);
+}
+
+function renderLista(filtro) {
+  const lista = document.getElementById('lista');
+  const circs = Object.keys(dadosMapa).filter(c => {
+    if (!filtro) return true;
+    const f = filtro.toLowerCase();
+    return c.toLowerCase().includes(f) || dadosMapa[c].se.toLowerCase().includes(f);
+  });
+
+  document.getElementById('cont-alims').textContent = '(' + circs.length + ')';
+
+  lista.innerHTML = circs.map(circ => {
+    const d = dadosMapa[circ];
+    const ativo = selecionados.has(circ);
+    return `<div class="alim-item ${ativo?'ativo':''}" id="ai-${circ}" onclick="toggleAlim('${circ}')">
+      <div class="alim-nome">${circ}</div>
+      <div class="alim-info">${d.se}</div>
+      <div class="alim-badges">
+        <span class="badge polo">${d.polo}</span>
+        <span class="badge t1cnt">T1: ${d.t1.length}</span>
+        <span class="badge t2cnt">T2: ${d.t2.length}</span>
+        <span class="badge chcnt">⚑ ${d.chaves.filter(c=>CHAVES_ALVO.has(c.nome)).length} alvo</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════
+// EXPORT KML
+// ══════════════════════════════════════════════════
+function exportarKML() {
+  const alvos = selecionados.size > 0 ? [...selecionados] : Object.keys(dadosMapa);
+  let kml = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n';
+  kml += '<name>Trechos Selecionados — Energisa Tocantins</name>\n';
+  kml += '<Style id="t1"><LineStyle><color>ff2828c6</color><width>3</width></LineStyle></Style>\n';
+  kml += '<Style id="t2"><LineStyle><color>ff0051e6</color><width>2</width></LineStyle></Style>\n';
+  kml += '<Style id="ch"><IconStyle><color>ffff4400</color><scale>0.7</scale></IconStyle></Style>\n';
+  kml += '<Style id="ch_alvo"><IconStyle><color>ff4417ff</color><scale>1.0</scale></IconStyle></Style>\n';
+
+  for (const circ of alvos) {
+    const d = dadosMapa[circ];
+    if (!d) continue;
+    kml += `<Folder><name>${circ} — ${d.se}</name>\n`;
+    kml += `<Folder><name>T1</name>\n`;
+    d.t1.forEach((l,i) => {
+      const coords = l.map(c => c[0]+','+c[1]+',0').join(' ');
+      kml += `<Placemark><name>T1_${i+1}</name><styleUrl>#t1</styleUrl><LineString><coordinates>${coords}</coordinates></LineString></Placemark>\n`;
+    });
+    kml += `</Folder>\n<Folder><name>T2</name>\n`;
+    d.t2.forEach((l,i) => {
+      const coords = l.map(c => c[0]+','+c[1]+',0').join(' ');
+      kml += `<Placemark><name>T2_${i+1}</name><styleUrl>#t2</styleUrl><LineString><coordinates>${coords}</coordinates></LineString></Placemark>\n`;
+    });
+    kml += `</Folder>\n<Folder><name>Chaves</name>\n`;
+    d.chaves.forEach(c => {
+      const isAlvo = CHAVES_ALVO.has(c.nome);
+      kml += `<Placemark><name>${c.nome}</name><styleUrl>${isAlvo?'#ch_alvo':'#ch'}</styleUrl><Point><coordinates>${c.lon},${c.lat},0</coordinates></Point></Placemark>\n`;
+    });
+    kml += `</Folder>\n</Folder>\n`;
+  }
+  kml += '</Document>\n</kml>';
+  baixar('trechos_selecionados.kml', kml, 'application/vnd.google-earth.kml+xml');
+}
+
+function exportarCSV() {
+  const alvos = selecionados.size > 0 ? [...selecionados] : Object.keys(dadosMapa);
+  const rows = [['TIPO','ALIMENTADOR','SE','POLO','CHAVE','LAT','LON','ALVO']];
+  for (const circ of alvos) {
+    const d = dadosMapa[circ];
+    if (!d) continue;
+    d.chaves.forEach(c => {
+      rows.push(['CHAVE', circ, d.se, d.polo, c.nome, c.lat, c.lon, CHAVES_ALVO.has(c.nome)?'SIM':'NAO']);
+    });
+  }
+  baixar('chaves_selecionadas.csv', '\uFEFF' + rows.map(r=>r.join(';')).join('\n'), 'text/csv');
+}
+
+function baixar(nome, conteudo, tipo) {
+  const blob = new Blob([conteudo], { type: tipo });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = nome;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ══════════════════════════════════════════════════
+// INIT — carregar dados
+// ══════════════════════════════════════════════════
+document.getElementById('busca-alim').addEventListener('input', e => renderLista(e.target.value));
+
+fetch('dados_mapa.json')
+  .then(r => r.json())
+  .then(dados => {
+    dadosMapa = dados;
+    document.getElementById('loading-fill').style.width = '30%';
+
+    const circs = Object.keys(dados);
+    let i = 0;
+    function renderNext() {
+      if (i >= circs.length) {
+        document.getElementById('loading').style.display = 'none';
+        renderLista('');
+        // Zoom geral
+        const allBounds = Object.values(alimBounds);
+        if (allBounds.length) {
+          let merged = allBounds[0];
+          allBounds.forEach(b => { merged = merged.extend(b); });
+          map.fitBounds(merged, { padding: [20,20] });
+        }
+        return;
+      }
+      const circ = circs[i];
+      renderAlimentador(circ, dados[circ]);
+      document.getElementById('loading-fill').style.width = (30 + 70*(i+1)/circs.length) + '%';
+      i++;
+      requestAnimationFrame(renderNext);
+    }
+    requestAnimationFrame(renderNext);
+  })
+  .catch(e => {
+    document.getElementById('loading').textContent = 'Erro ao carregar dados: ' + e.message;
+  });
+</script>
+</body>
+</html>
