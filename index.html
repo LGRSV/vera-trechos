@@ -65,15 +65,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 #map{flex:1;background:#1a1a1a}
 
 /* LEGENDA */
-#legenda{position:absolute;bottom:20px;right:10px;z-index:900;background:rgba(20,20,20,.92);border:1px solid #333;border-radius:10px;padding:10px 14px;font-size:11px;color:#ccc;min-width:180px;box-shadow:0 2px 14px rgba(0,0,0,.5)}
+#legenda{position:absolute;bottom:20px;right:10px;z-index:900;background:rgba(0,0,0,.7);border:1px solid #444;backdrop-filter:blur(4px);border-radius:10px;padding:10px 14px;font-size:11px;color:#ccc;min-width:180px;box-shadow:0 2px 14px rgba(0,0,0,.5)}
 #legenda h4{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
 .lg{display:flex;align-items:center;gap:8px;margin-bottom:5px}
 .ll{width:22px;border-radius:2px}
 .ld{width:10px;height:10px;border-radius:50%}
 
 /* POPUP ESCURO */
-.leaflet-popup-content-wrapper{background:#1e1e1e;color:#e0e0e0;border:1px solid #333;border-radius:8px}
-.leaflet-popup-tip{background:#1e1e1e}
+.leaflet-popup-content-wrapper{background:rgba(10,10,10,.88);color:#f0f0f0;border:1px solid #444;border-radius:8px;backdrop-filter:blur(4px)}
+.leaflet-popup-tip{background:#111}
 .leaflet-popup-content{font-size:12px;line-height:1.6}
 </style>
 </head>
@@ -85,6 +85,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <p>Clique em um ativo para carregar o alimentador completo</p>
   </div>
   <div id="hdr-right">
+    <button class="tbtn on" id="btn-base" onclick="trocarBase()" style="border-color:#80cbc4;color:#80cbc4">Mapa</button>
     <button class="tbtn on" id="btn-t1"   onclick="tog('t1')">T1</button>
     <button class="tbtn on" id="btn-t2"   onclick="tog('t2')">T2</button>
     <button class="tbtn on" id="btn-ch"   onclick="tog('ch')">Chaves</button>
@@ -115,19 +116,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div id="legenda">
   <h4>Legenda</h4>
-  <div class="lg"><div class="ll" style="height:3px;background:#e53935"></div><span>T1 — Tronco</span></div>
-  <div class="lg"><div class="ll" style="height:2px;background:#fb8c00"></div><span>T2 — Ramal</span></div>
+  <div class="lg"><div class="ll" style="height:3px;background:#FFD600"></div><span>T1 — Tronco</span></div>
+  <div class="lg"><div class="ll" style="height:2px;background:#00E5FF"></div><span>T2 — Ramal</span></div>
   <div class="lg"><div class="ld" style="background:#ff1744"></div><span>Ativo de referência</span></div>
-  <div class="lg"><div class="ld" style="background:#7e57c2"></div><span>Chaves da rede</span></div>
-  <div class="lg"><div class="ld" style="background:#1e88e5;width:7px;height:7px"></div><span>Transformadores</span></div>
+  <div class="lg"><div class="ld" style="background:#FF6F00"></div><span>Chaves da rede</span></div>
+  <div class="lg"><div class="ld" style="background:#fff;border:2px solid #222;width:8px;height:8px"></div><span>Transformadores</span></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── Tile escuro ──
 const map = L.map('map',{zoomControl:true}).setView([-9.8,-48.5],7);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png',
-  {attribution:'© CartoDB',maxZoom:19}).addTo(map);
+// Camadas de mapa base
+const TILES = {
+  satelite: L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',{
+    attribution:'© Google',maxZoom:21,subdomains:['0','1','2','3'],
+  }),
+  rua: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap',maxZoom:19,
+  }),
+};
+TILES.satelite.addTo(map);
+let baseAtual = 'satelite';
+function trocarBase(){
+  map.removeLayer(TILES[baseAtual]);
+  baseAtual = baseAtual==='satelite' ? 'rua' : 'satelite';
+  TILES[baseAtual].addTo(map);
+  document.getElementById('btn-base').textContent = baseAtual==='satelite' ? 'Mapa' : 'Satélite';
+}
 
 const LY = {
   t1:   L.layerGroup().addTo(map),
@@ -237,12 +253,12 @@ function renderAlimentador(circ, d){
   const pts=[];
   d.t1.forEach(l=>{
     const p=l.map(c=>[c[1],c[0]]);
-    L.polyline(p,{color:'#e53935',weight:2.5,opacity:.9}).addTo(LY.t1);
+    L.polyline(p,{color:'#FFD600',weight:2.5,opacity:1}).addTo(LY.t1);
     p.forEach(x=>pts.push(x));
   });
   d.t2.forEach(l=>{
     const p=l.map(c=>[c[1],c[0]]);
-    L.polyline(p,{color:'#fb8c00',weight:1.8,opacity:.85}).addTo(LY.t2);
+    L.polyline(p,{color:'#00E5FF',weight:1.8,opacity:.9}).addTo(LY.t2);
     p.forEach(x=>pts.push(x));
   });
   d.chaves.forEach(c=>{
@@ -254,14 +270,14 @@ function renderAlimentador(circ, d){
       alvoMarkers[c.nome]=m;
     } else {
       L.circleMarker([c.lat,c.lon],{
-        radius:4,fillColor:'#7e57c2',color:'#fff',weight:1.5,fillOpacity:.8
+        radius:4,fillColor:'#FF6F00',color:'#fff',weight:1.5,fillOpacity:.9
       }).bindPopup(`<b>${c.nome}</b><br>Chave · ${circ}`).addTo(LY.ch);
     }
     pts.push([c.lat,c.lon]);
   });
   d.trafos.forEach(t=>{
     L.circleMarker([t.lat,t.lon],{
-      radius:3,fillColor:'#1e88e5',color:'#fff',weight:1,fillOpacity:.8
+      radius:3,fillColor:'#ffffff',color:'#222',weight:1.5,fillOpacity:.95
     }).bindPopup(`<b>Trafo ${t.nome}</b><br>${circ}`).addTo(LY.tr);
     pts.push([t.lat,t.lon]);
   });
