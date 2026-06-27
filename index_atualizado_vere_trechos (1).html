@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Rede MT — Seleção de Trechos</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#111;height:100vh;display:flex;flex-direction:column}
+#hdr{background:#1a2e1a;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+#hdr h1{font-size:13px;font-weight:700;white-space:nowrap}
+#hdr p{font-size:10px;color:#8bc34a;margin-top:1px}
+.tbtn{padding:5px 9px;border:1.5px solid rgba(255,255,255,.22);border-radius:5px;background:transparent;color:#ccc;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+.tbtn:hover{border-color:rgba(255,255,255,.5);color:#fff}.tbtn.on{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.5);color:#fff}.tbtn.sat{border-color:#80cbc4;color:#80cbc4}
+#layout{display:flex;flex:1;overflow:hidden}
+#painel{width:292px;flex-shrink:0;background:#1c1c1e;color:#f0f0f0;display:flex;flex-direction:column;border-right:1px solid #2a2a2c;overflow:hidden}
+#busca-wrap{padding:10px;border-bottom:1px solid #2a2a2c}#busca{width:100%;padding:7px 10px;background:#2c2c2e;border:1.5px solid #3a3a3c;border-radius:7px;color:#f0f0f0;font-size:12px;font-family:inherit;outline:none}#busca:focus{border-color:#5c9a5c}#busca::placeholder{color:#555}
+#bs{font-size:10px;color:#555;margin-top:5px;display:flex;gap:8px}#lista{overflow-y:auto;flex:1}.gt{padding:5px 10px;font-size:9px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.1em;background:#161618;position:sticky;top:0;z-index:1}
+.item{padding:8px 10px;border-bottom:1px solid #222;cursor:pointer;display:flex;align-items:flex-start;gap:7px;transition:background .1s}.item:hover{background:#252527}.item.done{background:#192619}.item.busy{pointer-events:none;opacity:.65}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}.dot-g{background:#4caf50}.dot-b{background:#1976d2}.dot-na{background:#ff9800}.dot-spin{background:#ff9800;animation:sp .7s ease-in-out infinite}@keyframes sp{0%,100%{opacity:.3}50%{opacity:1}}
+.icod{font-size:11px;font-weight:600;color:#e0e0e0;letter-spacing:.02em}.isub{font-size:10px;color:#777;margin-top:1px}.itag{display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;margin-top:3px}.tg{background:#1a3a1a;color:#66bb6a;border:1px solid #2e5a2e}.tna{background:#3a2a12;color:#ffb74d;border:1px solid #664719}
+#bar{padding:8px 10px;border-top:1px solid #2a2a2c;background:#161618;font-size:10px;color:#555;display:flex;gap:5px;flex-wrap:wrap;align-items:center;min-height:38px}.chip{background:#1e3a1e;color:#66bb6a;border:1px solid #2e5a2e;border-radius:4px;padding:2px 7px;font-size:10px;cursor:pointer}.chip:hover{background:#254425}#btn-lp{margin-left:auto;padding:4px 9px;background:#3a1a1a;color:#ef9a9a;border:1px solid #5a2a2a;border-radius:5px;font-size:10px;cursor:pointer;font-family:inherit;font-weight:700}
+#sel-bar{display:none;padding:8px 10px;background:#1a2e1a;border-top:1px solid #2a5a2a;font-size:11px;color:#a5d6a7;flex-direction:column;gap:6px}#sel-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.seltbtn{padding:5px 10px;border:1.5px solid #4caf50;border-radius:6px;background:transparent;color:#4caf50;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}.seltbtn:hover{background:#1e4d1e}.seltbtn.red{border-color:#ef5350;color:#ef5350}.seltbtn.red:hover{background:#3a1a1a}
+#map{flex:1}#legenda{position:absolute;bottom:20px;right:10px;z-index:900;background:rgba(0,0,0,.75);border:1px solid #333;border-radius:10px;padding:10px 13px;font-size:11px;color:#ccc;min-width:185px;backdrop-filter:blur(4px)}#legenda h4{font-size:9px;color:#777;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}.lg{display:flex;align-items:center;gap:7px;margin-bottom:4px}.ll{width:20px;border-radius:2px}.ld{width:9px;height:9px;border-radius:50%}
+.leaflet-popup-content-wrapper{background:rgba(10,10,10,.94);color:#e8e8e8;border:1px solid #444;border-radius:8px;backdrop-filter:blur(4px)}.leaflet-popup-tip{background:#111}.leaflet-popup-content{font-size:12px;line-height:1.55;min-width:190px}.popup-title{font-weight:700;font-size:13px;margin-bottom:4px}.popup-alvo{color:#ff5252;font-weight:700}.popup-btn{display:block;margin-top:8px;padding:7px 8px;background:#1e5a1e;color:#66bb6a;border:1.5px solid #2e7d2e;border-radius:6px;text-align:center;font-weight:700;cursor:pointer;font-size:12px;font-family:inherit;width:100%}.popup-btn:hover{background:#1a4a1a}.popup-btn.alt{background:#152f3e;color:#80d8ff;border-color:#397895}.popup-btn.alt:hover{background:#17445b}.popup-note{font-size:10px;color:#999;margin-top:5px}
+@media(max-width:720px){#painel{width:235px}#hdr{align-items:flex-start}.tbtn{padding:4px 6px;font-size:9px}#hdr h1{font-size:11px}}
+</style>
+</head>
+<body>
+<div id="hdr">
+  <div><h1>Rede MT — Seleção de Trechos</h1><p>Selecione por ativo, chave, trecho ou ponto final da rede</p></div>
+  <div style="margin-left:auto;display:flex;gap:5px;flex-wrap:wrap">
+    <button class="tbtn on" id="btn-t1" onclick="tog('t1')">T1</button>
+    <button class="tbtn on" id="btn-t2" onclick="tog('t2')">T2</button>
+    <button class="tbtn on" id="btn-ch" onclick="tog('ch')">Chaves</button>
+    <button class="tbtn on" id="btn-tr" onclick="tog('tr')">Trafos</button>
+    <button class="tbtn on" id="btn-alvo" onclick="tog('alvo')" style="border-color:#ff5252;color:#ff5252">Ativos</button>
+    <button class="tbtn on" id="btn-fim" onclick="tog('fim')" style="border-color:#ce93d8;color:#ce93d8">Finais</button>
+    <button class="tbtn sat" id="btn-base" onclick="trocarBase()">Mapa</button>
+  </div>
+</div>
+<div id="layout">
+  <div id="painel">
+    <div id="busca-wrap">
+      <input id="busca" placeholder="Buscar ativo, últimos 8 dígitos ou SE..." oninput="filtrar(this.value)">
+      <div id="bs"><span id="st-e"></span><span id="st-n"></span></div>
+    </div>
+    <div id="lista"></div>
+    <div id="sel-bar">
+      <div id="sel-info"><b id="sel-count">0</b> trechos selecionados</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="seltbtn" onclick="exportarSelecao()">Exportar KML</button>
+        <button class="seltbtn" onclick="exportarSelecaoCSV()">Exportar CSV</button>
+        <button class="seltbtn red" onclick="limparSelecao()">Limpar seleção</button>
+      </div>
+    </div>
+    <div id="bar"><span style="color:#555;font-size:10px">Nenhum alimentador carregado</span></div>
+  </div>
+  <div id="map"></div>
+</div>
+<div id="legenda">
+  <h4>Legenda</h4>
+  <div class="lg"><div class="ll" style="height:3px;background:#FFD600"></div><span>T1 — Tronco</span></div>
+  <div class="lg"><div class="ll" style="height:2px;background:#00E5FF"></div><span>T2 — Ramal</span></div>
+  <div class="lg"><div class="ll" style="height:3px;background:#00e676"></div><span>Trecho selecionado</span></div>
+  <div class="lg"><div class="ld" style="background:#ff1744"></div><span>Ativo de referência</span></div>
+  <div class="lg"><div class="ld" style="background:#FF6F00"></div><span>Chave</span></div>
+  <div class="lg"><div class="ld" style="background:#fff;border:1.5px solid #333"></div><span>Trafo</span></div>
+  <div class="lg"><div class="ld" style="background:#ce93d8"></div><span>Final de trecho</span></div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map=L.map('map',{zoomControl:true}).setView([-9.8,-48.5],7);
+const TILES={
+  sat:L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',{attribution:'© Google',maxZoom:21,subdomains:['0','1','2','3']}),
+  rua:L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19})
+};
+TILES.sat.addTo(map);let baseAtual='sat';
+function trocarBase(){map.removeLayer(TILES[baseAtual]);baseAtual=baseAtual==='sat'?'rua':'sat';TILES[baseAtual].addTo(map);document.getElementById('btn-base').textContent=baseAtual==='sat'?'Mapa':'Satélite';}
+
+const LY={t1:L.layerGroup().addTo(map),t2:L.layerGroup().addTo(map),ch:L.layerGroup().addTo(map),tr:L.layerGroup().addTo(map),alvo:L.layerGroup().addTo(map),fim:L.layerGroup().addTo(map)};
+const ON={t1:1,t2:1,ch:1,tr:1,alvo:1,fim:1};
+function tog(k){ON[k]=!ON[k];document.getElementById('btn-'+k).classList.toggle('on',!!ON[k]);ON[k]?map.addLayer(LY[k]):map.removeLayer(LY[k]);}
+
+let INDICE={},NAO=[],INDICE_SUFIXO={};
+let carregados={},boundsC={},alvoMkr={};
+let selLayer=L.layerGroup().addTo(map),selSegs=[],selSegIds=[],selCirc=null,selOrigem='';
+let buscando=new Set();
+const SNAP_METROS=12;
+
+function dig(v){return String(v??'').replace(/\D/g,'');}
+function ult8(v){const d=dig(v);return d.length>8?d.slice(-8):d;}
+function iguais(a,b){const aa=dig(a),bb=dig(b);return !!aa&&!!bb&&(aa===bb||(aa.length>=8&&bb.length>=8&&aa.slice(-8)===bb.slice(-8)));}
+function esc(v){return '"'+String(v??'').replace(/"/g,'""')+'"';}
+function distanciaM(lon1,lat1,lon2,lat2){const R=6371000,p=Math.PI/180;const dLat=(lat2-lat1)*p,dLon=(lon2-lon1)*p;const a=Math.sin(dLat/2)**2+Math.cos(lat1*p)*Math.cos(lat2*p)*Math.sin(dLon/2)**2;return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function construirIndiceSufixo(){INDICE_SUFIXO={};Object.keys(INDICE).forEach(c=>{const s=ult8(c);if(!s)return;(INDICE_SUFIXO[s]??=[]).push(c);});}
+function corresponde(c,info,q){q=String(q||'').trim().toLowerCase();if(!q)return true;const dq=dig(q);return c.toLowerCase().includes(q)||String(info.se||'').toLowerCase().includes(q)||String(info.circ||'').toLowerCase().includes(q)||(dq&&ult8(c).includes(dq));}
+function infoAtivo(cod){if(INDICE[cod])return {codigo:cod,info:INDICE[cod],porSufixo:false};const cs=INDICE_SUFIXO[ult8(cod)]||[];if(cs.length)return {codigo:cs[0],info:INDICE[cs[0]],porSufixo:true};return null;}
+function circuitosConhecidos(){return [...new Set(Object.values(INDICE).map(i=>i.circ).filter(Boolean))];}
+
+function montarGrafo(d){
+  if(d._grafo)return d._grafo;
+  const g={nos:{},grade:{},saidas:{},entradas:{},segNos:[],finais:[]};let seq=0;
+  function cel(lon,lat){return [Math.floor(Number(lon)*10000),Math.floor(Number(lat)*10000)];}
+  function snap(lon,lat){
+    const [gx,gy]=cel(lon,lat);let melhor=null,md=Infinity;
+    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)for(const id of(g.grade[(gx+dx)+'_'+(gy+dy)]||[])){
+      const n=g.nos[id],dd=distanciaM(lon,lat,n.lon,n.lat);if(dd<md){md=dd;melhor=id;}
+    }
+    if(melhor&&md<=SNAP_METROS)return melhor;
+    const id='n'+(++seq);g.nos[id]={lon:Number(lon),lat:Number(lat)};(g.grade[gx+'_'+gy]??=[]).push(id);return id;
+  }
+  d.segs.forEach((s,i)=>{
+    const a=snap(s[0],s[1]),b=snap(s[2],s[3]);g.segNos[i]={a,b};(g.saidas[a]??=[]).push(i);(g.entradas[b]??=[]).push(i);
+  });
+  g.finais=Object.keys(g.nos).filter(n=>(g.entradas[n]||[]).length>0&&(g.saidas[n]||[]).length===0);
+  d._grafo=g;return g;
+}
+function noMaisProximo(g,lon,lat,max=300){let id=null,md=Infinity;Object.entries(g.nos).forEach(([k,n])=>{const d=distanciaM(lon,lat,n.lon,n.lat);if(d<md){md=d;id=k;}});return md<=max?id:null;}
+function buscarNoEquipamento(d,cod,lon,lat){
+  const chave=d.chaves.find(c=>iguais(c[0],cod));
+  if(chave)return {tipo:'Chave',codigo:chave[0],lon:chave[3]??chave[1],lat:chave[4]??chave[2]};
+  const trafo=d.trafos.find(t=>iguais(t.nome,cod));
+  if(trafo)return {tipo:'Trafo',codigo:trafo.nome,lon:trafo.lon,lat:trafo.lat};
+  if(Number.isFinite(Number(lon))&&Number.isFinite(Number(lat)))return {tipo:'Ativo',codigo:cod,lon:Number(lon),lat:Number(lat)};
+  return null;
+}
+
+async function obterDados(circ){
+  if(carregados[circ])return carregados[circ];
+  const r=await fetch('alimentadores/'+circ+'.json?t='+Date.now());if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();montarGrafo(d);carregados[circ]=d;return d;
+}
+async function carregarEExibir(circ){const d=await obterDados(circ);if(!d._renderizado){renderAlim(circ,d);d._renderizado=true;}return d;}
+
+function codigosAlvoDoCirc(circ){return Object.entries(INDICE).filter(([,i])=>i.circ===circ);}
+function renderAlim(circ,d){
+  const pts=[],g=montarGrafo(d),alvos=codigosAlvoDoCirc(circ);
+  d.segs.forEach((s,i)=>{
+    const pts2=s[5].map(c=>[c[1],c[0]]);const ln=L.polyline(pts2,{color:s[4]===1?'#FFD600':'#00E5FF',weight:s[4]===1?2.6:1.9,opacity:.9});
+    ln.on('click',ev=>L.popup({maxWidth:250}).setLatLng(ev.latlng).setContent(popupTrecho(circ,i,d)).openOn(map));ln.addTo(s[4]===1?LY.t1:LY.t2);pts2.forEach(p=>pts.push(p));
+  });
+  d.chaves.forEach(c=>{
+    const ehAlvo=alvos.some(([cod,info])=>iguais(info.codigoBase||cod,c[0])||iguais(cod,c[0]));
+    if(!ehAlvo)L.circleMarker([c[2],c[1]],{radius:4,fillColor:'#FF6F00',color:'#fff',weight:1.5,fillOpacity:.9}).bindPopup(popupChave(c[0],d)).addTo(LY.ch);
+    pts.push([c[2],c[1]]);
+  });
+  d.trafos.forEach(t=>{L.circleMarker([t.lat,t.lon],{radius:3.5,fillColor:'#fff',color:'#333',weight:1.5,fillOpacity:.95}).bindPopup(popupTrafo(t.nome,d,t)).addTo(LY.tr);pts.push([t.lat,t.lon]);});
+  alvos.forEach(([cod,info])=>{
+    if(!Number.isFinite(Number(info.lat))||!Number.isFinite(Number(info.lon)))return;
+    const m=L.circleMarker([info.lat,info.lon],{radius:9,fillColor:'#ff1744',color:'#fff',weight:2.5,fillOpacity:1}).bindPopup(popupAlvo(cod,d,info),{maxWidth:250}).addTo(LY.alvo);alvoMkr[cod]=m;pts.push([info.lat,info.lon]);
+  });
+  g.finais.forEach(no=>{const n=g.nos[no];L.circleMarker([n.lat,n.lon],{radius:4.5,fillColor:'#ce93d8',color:'#fff',weight:1.2,fillOpacity:.95}).bindPopup(popupFinal(circ,no,d)).addTo(LY.fim);});
+  if(pts.length)boundsC[circ]=L.latLngBounds(pts);
+}
+
+function popupAlvo(cod,d,info){return `<div><div class="popup-title popup-alvo">⚑ ${cod}</div><div style="color:#aaa;font-size:10px">${d.circ} · ${d.se}</div><div class="popup-note">${info.porSufixo?'Localizado pelos últimos 8 dígitos · ':''}${info.tipo||'Ativo de referência'}</div><button class="popup-btn" onclick="iniciarSelecaoPorAtivo('${cod}','${d.circ}')">Selecionar trecho a partir do ativo →</button></div>`;}
+function popupChave(cod,d){return `<div><div class="popup-title">${cod}</div><div style="color:#aaa;font-size:10px">${d.circ} · ${d.se}</div><button class="popup-btn" onclick="iniciarSelecaoPorCodigo('${cod}','${d.circ}')">Selecionar trecho a partir desta chave →</button></div>`;}
+function popupTrafo(cod,d,t){return `<div><div class="popup-title">${cod}</div><div style="color:#aaa;font-size:10px">Transformador · ${d.circ}</div><button class="popup-btn" onclick="iniciarSelecaoPorCodigo('${cod}','${d.circ}',${t.lon},${t.lat})">Selecionar trecho a partir deste ativo →</button></div>`;}
+function popupFinal(circ,no,d){const n=d._grafo.nos[no];return `<div><div class="popup-title">Final de trecho</div><div style="color:#aaa;font-size:10px">${d.circ} · ${d.se}</div><div class="popup-note">${n.lat.toFixed(6)}, ${n.lon.toFixed(6)}</div><button class="popup-btn alt" onclick="selecionarAPartirNo('${circ}','${no}','Final de trecho')">Selecionar último trecho</button></div>`;}
+function popupTrecho(circ,i,d){const s=d.segs[i],g=d._grafo,n=g.segNos[i];return `<div><div class="popup-title">Trecho ${i+1} · ${s[4]===1?'T1 — Tronco':'T2 — Ramal'}</div><div style="color:#aaa;font-size:10px">${d.circ} · ${d.se}</div><button class="popup-btn" onclick="selecionarAPartirNo('${circ}','${n.a}','Início do trecho ${i+1}')">Selecionar a partir do início</button><button class="popup-btn alt" onclick="selecionarAPartirNo('${circ}','${n.b}','Fim do trecho ${i+1}')">Selecionar a partir do fim</button></div>`;}
+
+function iniciarSelecaoPorAtivo(cod,circ){const info=INDICE[cod]||{};iniciarSelecaoPorCodigo(cod,circ,info.lon,info.lat);}
+function iniciarSelecaoPorCodigo(cod,circ,lon,lat){
+  map.closePopup();const d=carregados[circ];if(!d){alert('Alimentador não carregado.');return;}const item=buscarNoEquipamento(d,cod,lon,lat);if(!item){alert('Ativo não localizado no alimentador.');return;}const no=noMaisProximo(montarGrafo(d),item.lon,item.lat);if(!no){alert('Não foi possível associar o ativo à rede.');return;}selecionarAPartirNo(circ,no,item.tipo+' '+item.codigo);
+}
+function selecionarAPartirNo(circ,noInicio,origem){
+  map.closePopup();const d=carregados[circ];if(!d){alert('Alimentador não carregado.');return;}const g=montarGrafo(d);const visitados=new Set([noInicio]),fila=[noInicio],segIds=[],usados=new Set();
+  while(fila.length){const atual=fila.shift();for(const si of(g.saidas[atual]||[])){if(usados.has(si))continue;usados.add(si);segIds.push(si);const fim=g.segNos[si].b;if(!visitados.has(fim)){visitados.add(fim);fila.push(fim);}}}
+  if(!segIds.length){for(const si of(g.entradas[noInicio]||[])){if(!usados.has(si)){usados.add(si);segIds.push(si);}}}
+  if(!segIds.length){alert('Nenhum trecho conectado foi encontrado neste ponto.');return;}
+  selLayer.clearLayers();selSegIds=segIds;selSegs=segIds.map(i=>d.segs[i]);selCirc=circ;selOrigem=origem;
+  selSegs.forEach(s=>L.polyline(s[5].map(c=>[c[1],c[0]]),{color:'#00e676',weight:3.8,opacity:1}).addTo(selLayer));
+  const allPts=selSegs.flatMap(s=>s[5].map(c=>[c[1],c[0]]));if(allPts.length)map.fitBounds(L.latLngBounds(allPts),{padding:[30,30]});
+  document.getElementById('sel-count').textContent=selSegs.length;document.getElementById('sel-bar').style.display='flex';document.getElementById('sel-info').innerHTML=`<b style="color:#66bb6a">${selSegs.length}</b> trechos selecionados a partir de <b style="color:#80cbc4">${origem}</b>`;
+}
+function limparSelecao(){selLayer.clearLayers();selSegs=[];selSegIds=[];selCirc=null;selOrigem='';document.getElementById('sel-bar').style.display='none';}
+
+function exportarSelecao(){if(!selSegs.length){alert('Nenhum trecho selecionado.');return;}let k='<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n';k+=`<name>Trechos — ${selOrigem} — ${selCirc}</name>\n`;k+='<Style id="t1"><LineStyle><color>ff00d6FF</color><width>3</width></LineStyle></Style>\n<Style id="t2"><LineStyle><color>ffFF6400</color><width>2</width></LineStyle></Style>\n';k+=`<Folder><name>Trechos (${selSegs.length})</name>\n`;selSegs.forEach((s,i)=>{const coords=s[5].map(c=>c[0]+','+c[1]+',0').join(' ');k+=`<Placemark><name>${s[4]===1?'T1':'T2'}_${i+1}</name><styleUrl>#${s[4]===1?'t1':'t2'}</styleUrl><LineString><coordinates>${coords}</coordinates></LineString></Placemark>\n`;});k+='</Folder>\n</Document>\n</kml>';baixar(`trecho_${selCirc}.kml`,k,'application/vnd.google-earth.kml+xml');}
+function exportarSelecaoCSV(){if(!selSegs.length){alert('Nenhum trecho selecionado.');return;}const d=carregados[selCirc],rows=[['TIPO','ALIMENTADOR','SE','ORIGEM_SELECAO','SEG_IDX','LON_INICIO','LAT_INICIO','LON_FIM','LAT_FIM','KM']];selSegs.forEach((s,i)=>{const ini=s[5][0],fim=s[5][s[5].length-1];let km=0;for(let j=0;j<s[5].length-1;j++)km+=distanciaM(s[5][j][0],s[5][j][1],s[5][j+1][0],s[5][j+1][1])/1000;rows.push([s[4]===1?'T1':'T2',selCirc,d.se,selOrigem,i+1,ini[0],ini[1],fim[0],fim[1],km.toFixed(4)]);});baixar(`trecho_${selCirc}.csv`,'\uFEFF'+rows.map(r=>r.map(esc).join(';')).join('\n'),'text/csv');}
+function baixar(nome,conteudo,tipo){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([conteudo],{type:tipo}));a.download=nome;document.body.appendChild(a);a.click();document.body.removeChild(a);}
+
+function renderLista(f=''){
+  const encontrados=Object.entries(INDICE).filter(([c,i])=>corresponde(c,i,f)).sort((a,b)=>a[0].localeCompare(b[0]));const nao=NAO.filter(c=>corresponde(c,{},f)).sort();
+  document.getElementById('st-e').textContent=encontrados.length+' encontrados';document.getElementById('st-n').textContent=nao.length+' pendentes de localização';
+  document.getElementById('lista').innerHTML=(encontrados.length?`<div class="gt">Ativos encontrados (${encontrados.length})</div>`:'')+encontrados.map(([cod,info])=>`<div class="item${carregados[info.circ]?._renderizado?' done':''}" id="li-${cod}" onclick="selecionarAtivo('${cod}')"><div class="dot ${carregados[info.circ]?._renderizado?'dot-b':'dot-g'}"></div><div><div class="icod">${cod}</div><div class="isub">${info.se||''}</div><span class="itag tg">${info.circ||''} · ${info.polo||''}</span>${info.porSufixo?'<span class="itag tna">últimos 8 dígitos</span>':''}</div></div>`).join('')+(nao.length?`<div class="gt">Não localizados (${nao.length})</div>`:'')+nao.map(cod=>`<div class="item" id="li-${cod}" onclick="localizarNaoEncontrado('${cod}')"><div class="dot dot-na"></div><div><div class="icod">${cod}</div><div class="isub">Clique para procurar pelos últimos 8 dígitos</div><span class="itag tna">localizar</span></div></div>`).join('');
+}
+function filtrar(v){renderLista(v);}
+
+async function selecionarAtivo(cod){
+  const ref=infoAtivo(cod);if(!ref){await localizarNaoEncontrado(cod);return;}const info=INDICE[cod]||ref.info;const item=document.getElementById('li-'+cod);if(item){item.classList.add('busy');const d=item.querySelector('.dot');if(d)d.className='dot dot-spin';}
+  try{const d=await carregarEExibir(info.circ);map.setView([info.lat,info.lon],15,{animate:true});setTimeout(()=>{(alvoMkr[cod]||alvoMkr[ref.codigo])?.openPopup();},350);atualizarBar();renderLista(document.getElementById('busca').value);}catch(e){alert('Erro ao carregar '+info.circ+': '+e.message);renderLista(document.getElementById('busca').value);}
+}
+async function localizarNaoEncontrado(cod){
+  if(buscando.has(cod))return;buscando.add(cod);const el=document.getElementById('li-'+cod);if(el){el.classList.add('busy');const d=el.querySelector('.dot');if(d)d.className='dot dot-spin';}
+  try{
+    const direto=infoAtivo(cod);if(direto){INDICE[cod]={...direto.info,codigoBase:direto.codigo,porSufixo:true};NAO=NAO.filter(x=>x!==cod);construirIndiceSufixo();renderLista(document.getElementById('busca').value);await selecionarAtivo(cod);return;}
+    const alvo=ult8(cod);let achado=null;
+    for(const circ of circuitosConhecidos()){
+      let d=carregados[circ];if(!d){try{const r=await fetch('alimentadores/'+circ+'.json?t='+Date.now());if(!r.ok)continue;d=await r.json();montarGrafo(d);}catch{continue;}}
+      const item=buscarNoEquipamento(d,alvo);if(item){achado={circ,d,item};break;}
+    }
+    if(!achado){alert('Ativo não localizado pelos últimos 8 dígitos: '+alvo);return;}
+    carregados[achado.circ]=achado.d;INDICE[cod]={circ:achado.circ,se:achado.d.se,polo:achado.d.polo,lat:achado.item.lat,lon:achado.item.lon,codigoBase:achado.item.codigo,tipo:achado.item.tipo,porSufixo:true};NAO=NAO.filter(x=>x!==cod);construirIndiceSufixo();renderLista(document.getElementById('busca').value);await selecionarAtivo(cod);
+  }finally{buscando.delete(cod);}
+}
+function atualizarBar(){const cs=Object.entries(carregados).filter(([,d])=>d._renderizado).map(([c])=>c),bar=document.getElementById('bar');if(!cs.length){bar.innerHTML='<span style="color:#555;font-size:10px">Nenhum alimentador carregado</span>';return;}bar.innerHTML=cs.map(c=>`<span class="chip" onclick="map.fitBounds(boundsC['${c}'],{padding:[20,20]})" title="Zoom: ${c}">${c}</span>`).join('')+'<button id="btn-lp" onclick="limparTudo()">Limpar</button>';}
+function limparTudo(){['t1','t2','ch','tr','alvo','fim'].forEach(k=>LY[k].clearLayers());selLayer.clearLayers();carregados={};boundsC={};alvoMkr={};selSegs=[];selSegIds=[];selCirc=null;selOrigem='';document.getElementById('sel-bar').style.display='none';atualizarBar();renderLista(document.getElementById('busca').value);}
+
+fetch('indice.json').then(r=>r.json()).then(d=>{INDICE=d.chaves||{};NAO=d.nao_encontradas||[];construirIndiceSufixo();renderLista();atualizarBar();}).catch(e=>{document.getElementById('lista').innerHTML='<div style="padding:20px;color:#888;font-size:12px">Erro ao carregar índice: '+e.message+'</div>';});
+</script>
+</body>
+</html>
