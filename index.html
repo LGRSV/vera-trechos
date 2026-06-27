@@ -2,300 +2,343 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rede MT — Energisa Tocantins</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Rede MT — Seleção por Ativo</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f0}
-  #header{background:#1a2e1a;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-  #header h1{font-size:15px;font-weight:700;white-space:nowrap}
-  #header p{font-size:10px;color:#8bc34a;margin-top:2px}
-  #header-right{display:flex;gap:6px;flex-wrap:wrap}
-  .hbtn{padding:5px 10px;border:1px solid rgba(255,255,255,0.3);border-radius:6px;background:rgba(255,255,255,0.1);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
-  .hbtn.on{background:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.6)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#111;height:100vh;display:flex;flex-direction:column}
 
-  #layout{display:flex;height:calc(100vh - 52px)}
+/* HEADER */
+#hdr{background:#1a2e1a;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+#hdr h1{font-size:14px;font-weight:700}
+#hdr p{font-size:10px;color:#8bc34a;margin-top:1px}
+#hdr-right{margin-left:auto;display:flex;gap:6px}
+.tbtn{padding:5px 10px;border:1.5px solid rgba(255,255,255,.25);border-radius:6px;background:transparent;color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.tbtn.on{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.55)}
 
-  /* PAINEL */
-  #painel{width:280px;flex-shrink:0;background:#fff;border-right:1px solid #ddd;display:flex;flex-direction:column;overflow:hidden}
-  #painel-top{padding:10px 12px;background:#f8f8f8;border-bottom:1px solid #eee}
-  .plabel{font-size:9px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
-  #busca{width:100%;padding:7px 10px;border:1.5px solid #ddd;border-radius:7px;font-size:12px;font-family:inherit;outline:none}
-  #busca:focus{border-color:#2e7d32}
-  #stat-bar{display:flex;gap:6px;margin-top:8px;font-size:10px;color:#666;flex-wrap:wrap}
-  .stat-chip{background:#f0f0f0;border-radius:4px;padding:2px 6px}
+/* LAYOUT */
+#layout{display:flex;flex:1;overflow:hidden}
 
-  #lista{overflow-y:auto;flex:1}
-  .alim{padding:10px 12px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .1s}
-  .alim:hover{background:#f5faf5}
-  .alim.sel{background:#e8f5e9;border-left:3px solid #2e7d32}
-  .alim-id{font-size:12px;font-weight:700;color:#1a2e1a}
-  .alim-se{font-size:10px;color:#888;margin-top:1px}
-  .alim-tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
-  .tag{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;border:1px solid}
-  .tag.polo{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}
-  .tag.t1{background:#ffebee;color:#b71c1c;border-color:#ef9a9a}
-  .tag.t2{background:#fff3e0;color:#bf360c;border-color:#ffcc80}
-  .tag.tr{background:#e3f2fd;color:#0d47a1;border-color:#90caf9}
-  .tag.ch{background:#f3e5f5;color:#4a148c;border-color:#ce93d8}
+/* PAINEL */
+#painel{width:270px;flex-shrink:0;background:#1c1c1e;color:#f0f0f0;display:flex;flex-direction:column;border-right:1px solid #333}
 
-  #exportar{padding:10px 12px;border-top:1px solid #ddd;background:#fafafa;display:flex;flex-direction:column;gap:6px}
-  .ebtn{padding:9px;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;width:100%}
-  .ebtn.kml{background:#2e7d32;color:#fff}
-  .ebtn.kml:hover{background:#1b5e20}
-  .ebtn.csv{background:#1565C0;color:#fff}
-  .ebtn.csv:hover{background:#0d47a1}
-  #exp-info{font-size:10px;color:#888;text-align:center}
+/* BUSCA */
+#busca-wrap{padding:10px;border-bottom:1px solid #333}
+#busca{width:100%;padding:8px 10px;background:#2c2c2e;border:1px solid #444;border-radius:8px;color:#f0f0f0;font-size:12px;font-family:inherit;outline:none}
+#busca::placeholder{color:#666}
+#busca:focus{border-color:#5c9a5c}
+#busca-stats{font-size:10px;color:#666;margin-top:6px;display:flex;gap:8px}
 
-  /* MAPA */
-  #map{flex:1}
+/* LISTA */
+#lista{overflow-y:auto;flex:1}
+.grupo-titulo{padding:6px 10px;font-size:9px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.1em;background:#161618;position:sticky;top:0;z-index:1}
 
-  /* LEGENDA */
-  #legenda{position:absolute;bottom:24px;right:10px;z-index:900;background:rgba(255,255,255,.95);border-radius:10px;padding:10px 14px;font-size:11px;box-shadow:0 2px 12px rgba(0,0,0,.15);min-width:170px}
-  #legenda h4{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
-  .leg{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-  .ll{width:22px;height:3px;border-radius:2px}
-  .ld{width:10px;height:10px;border-radius:50%}
+.item{padding:9px 10px;border-bottom:1px solid #252527;cursor:pointer;transition:background .1s;display:flex;align-items:flex-start;gap:8px}
+.item:hover{background:#252527}
+.item.carregado{background:#1e2e1e}
+.item.carregando{background:#1e2420;pointer-events:none}
+.item.nao-encontrado{opacity:.38;pointer-events:none;cursor:default}
 
-  /* LOADING */
-  #loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2000;background:rgba(255,255,255,.96);border-radius:14px;padding:28px 36px;text-align:center;box-shadow:0 6px 30px rgba(0,0,0,.2);font-size:14px;color:#333;min-width:260px}
-  #loading p{color:#888;font-size:12px;margin-top:6px}
-  .lbar{width:100%;height:5px;background:#eee;border-radius:3px;margin:14px 0 4px;overflow:hidden}
-  .lfill{height:100%;background:#2e7d32;border-radius:3px;transition:width .3s;width:0%}
-  #loading-sub{font-size:11px;color:#aaa;margin-top:4px}
+.item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.dot-ok{background:#4caf50}
+.dot-loading{background:#ff9800;animation:pulse .8s ease-in-out infinite}
+.dot-done{background:#1976d2}
+.dot-na{background:#444}
+
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+.item-info{flex:1;min-width:0}
+.item-cod{font-size:12px;font-weight:600;color:#e0e0e0;letter-spacing:.02em}
+.item-sub{font-size:10px;color:#888;margin-top:2px}
+.item-tag{display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;margin-top:3px;font-weight:700}
+.tag-circ{background:#1a3a1a;color:#66bb6a;border:1px solid #2e5a2e}
+.tag-na{background:#2a2a2a;color:#555;border:1px solid #333}
+
+/* MAPA CARREGADO */
+#loaded-bar{padding:8px 10px;border-top:1px solid #333;background:#161618;font-size:10px;color:#666;display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-height:36px}
+.loaded-chip{background:#1e3a1e;color:#66bb6a;border:1px solid #2e5a2e;border-radius:4px;padding:2px 7px;font-size:10px;cursor:pointer}
+.loaded-chip:hover{background:#1a441a}
+#btn-limpar{margin-left:auto;padding:4px 10px;background:#3a1a1a;color:#ef9a9a;border:1px solid #5a2a2a;border-radius:5px;font-size:10px;cursor:pointer;font-family:inherit;font-weight:700}
+
+/* MAPA */
+#map{flex:1;background:#1a1a1a}
+
+/* LEGENDA */
+#legenda{position:absolute;bottom:20px;right:10px;z-index:900;background:rgba(20,20,20,.92);border:1px solid #333;border-radius:10px;padding:10px 14px;font-size:11px;color:#ccc;min-width:180px;box-shadow:0 2px 14px rgba(0,0,0,.5)}
+#legenda h4{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.lg{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.ll{width:22px;border-radius:2px}
+.ld{width:10px;height:10px;border-radius:50%}
+
+/* POPUP ESCURO */
+.leaflet-popup-content-wrapper{background:#1e1e1e;color:#e0e0e0;border:1px solid #333;border-radius:8px}
+.leaflet-popup-tip{background:#1e1e1e}
+.leaflet-popup-content{font-size:12px;line-height:1.6}
 </style>
 </head>
 <body>
 
-<div id="header">
+<div id="hdr">
   <div>
-    <h1>Rede MT — Chaves / Trechos / Trafos</h1>
-    <p>Energisa Tocantins · 11 alimentadores</p>
+    <h1>Rede MT — Seleção por Ativo de Referência</h1>
+    <p>Clique em um ativo para carregar o alimentador completo</p>
   </div>
-  <div id="header-right">
-    <button class="hbtn on" id="btn-t1" onclick="toggleLayer('t1')">T1</button>
-    <button class="hbtn on" id="btn-t2" onclick="toggleLayer('t2')">T2</button>
-    <button class="hbtn on" id="btn-ch" onclick="toggleLayer('ch')">Chaves</button>
-    <button class="hbtn on" id="btn-tr" onclick="toggleLayer('tr')">Trafos</button>
-    <button class="hbtn" id="btn-ch-alvo" onclick="toggleLayer('alvo')" style="background:rgba(255,23,68,.3);border-color:rgba(255,23,68,.6)">Chaves Alvo</button>
+  <div id="hdr-right">
+    <button class="tbtn on" id="btn-t1"   onclick="tog('t1')">T1</button>
+    <button class="tbtn on" id="btn-t2"   onclick="tog('t2')">T2</button>
+    <button class="tbtn on" id="btn-ch"   onclick="tog('ch')">Chaves</button>
+    <button class="tbtn on" id="btn-tr"   onclick="tog('tr')">Trafos</button>
+    <button class="tbtn on" id="btn-alvo" onclick="tog('alvo')" style="border-color:#ff5252;color:#ff5252">Alvo</button>
   </div>
 </div>
 
 <div id="layout">
   <div id="painel">
-    <div id="painel-top">
-      <div class="plabel">Alimentadores</div>
-      <input id="busca" placeholder="Buscar por código ou SE...">
-      <div id="stat-bar">
-        <span class="stat-chip" id="s-alim">11 alim.</span>
-        <span class="stat-chip" id="s-trechos">—</span>
-        <span class="stat-chip" id="s-trafos">—</span>
-        <span class="stat-chip" id="s-chaves">—</span>
+    <div id="busca-wrap">
+      <input id="busca" placeholder="Buscar ativo ou SE..." oninput="filtrar(this.value)">
+      <div id="busca-stats">
+        <span id="st-enc"></span>
+        <span id="st-na"></span>
       </div>
     </div>
+
     <div id="lista"></div>
-    <div id="exportar">
-      <button class="ebtn kml" onclick="exportar('kml')">Exportar KML</button>
-      <button class="ebtn csv" onclick="exportar('csv')">Exportar CSV</button>
-      <div id="exp-info">Exporta todos ou os selecionados</div>
+
+    <div id="loaded-bar">
+      <span style="color:#555;font-size:10px;">Nenhum alimentador carregado</span>
     </div>
   </div>
+
   <div id="map"></div>
 </div>
 
 <div id="legenda">
   <h4>Legenda</h4>
-  <div class="leg"><div class="ll" style="background:#b71c1c;height:3px"></div>T1 — Tronco principal</div>
-  <div class="leg"><div class="ll" style="background:#bf360c;height:2px"></div>T2 — Ramal</div>
-  <div class="leg"><div class="ld" style="background:#6a1b9a;border:2px solid #fff;box-shadow:0 0 0 1px #6a1b9a"></div>Chaves (rede)</div>
-  <div class="leg"><div class="ld" style="background:#ff1744;border:2px solid #fff;box-shadow:0 0 0 1px #ff1744"></div>Chaves da lista</div>
-  <div class="leg"><div class="ld" style="background:#0d47a1;border:2px solid #fff;box-shadow:0 0 0 1px #0d47a1;width:8px;height:8px"></div>Transformadores</div>
-</div>
-
-<div id="loading">
-  <div>Carregando dados da rede...</div>
-  <div class="lbar"><div class="lfill" id="lfill"></div></div>
-  <div id="loading-sub">Aguarde</div>
+  <div class="lg"><div class="ll" style="height:3px;background:#e53935"></div><span>T1 — Tronco</span></div>
+  <div class="lg"><div class="ll" style="height:2px;background:#fb8c00"></div><span>T2 — Ramal</span></div>
+  <div class="lg"><div class="ld" style="background:#ff1744"></div><span>Ativo de referência</span></div>
+  <div class="lg"><div class="ld" style="background:#7e57c2"></div><span>Chaves da rede</span></div>
+  <div class="lg"><div class="ld" style="background:#1e88e5;width:7px;height:7px"></div><span>Transformadores</span></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const CHAVES_ALVO = new Set([
-  '300288233','3337667015','3300944193','300005077','300560149','320211011',
-  '301207087','310571052','8802271052','300734079','300514035','3320230001',
-  '3300410233','310565052','300522075','3300743233','300513086','3100491265',
-  '3310036079','8800831055','310636059','310212026','300328075','3300421233',
-  '8846927086','3300042024','3310079075','8825261001','3327488052','3300564075',
-  '330081079','3300671055','8815067086','3300272086','300427233','3100548018',
-  '3101323077','4000600070','7924622052','8821886122','219626149','4010107070',
-  '300879009','300466024','3301137084','3300989008','4000717113','301053055',
-  '3110026083','7900525015','327179149','320694122','4001176075','4000679075',
-  '4001181055','312402122','7955429075','307810070','4010017111','4000338024',
-  '8800585083','3300328008','300185034','4000480026','310008059','353950075',
-  '7923686078','4000637077','8800379070','7956373149','358297075','348264059',
-  '7942572059','8801320008','7910027196','300381083','4000235196','341155083'
-]);
+// ── Tile escuro ──
+const map = L.map('map',{zoomControl:true}).setView([-9.8,-48.5],7);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png',
+  {attribution:'© CartoDB',maxZoom:19}).addTo(map);
 
-const map = L.map('map').setView([-9.8,-48.5],7);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  {attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
-
-const layers={
-  t1:L.layerGroup().addTo(map),
-  t2:L.layerGroup().addTo(map),
-  ch:L.layerGroup().addTo(map),
-  tr:L.layerGroup().addTo(map),
-  alvo:L.layerGroup().addTo(map),
+const LY = {
+  t1:   L.layerGroup().addTo(map),
+  t2:   L.layerGroup().addTo(map),
+  ch:   L.layerGroup().addTo(map),
+  tr:   L.layerGroup().addTo(map),
+  alvo: L.layerGroup().addTo(map),
 };
-const on={t1:true,t2:true,ch:true,tr:true,alvo:true};
-const bounds_por_alim={};
-let dados={}, selecionados=new Set();
+const ON = {t1:true,t2:true,ch:true,tr:true,alvo:true};
 
-function toggleLayer(k){
-  on[k]=!on[k];
-  document.getElementById('btn-'+k).classList.toggle('on',on[k]);
-  on[k]?map.addLayer(layers[k]):map.removeLayer(layers[k]);
+function tog(k){
+  ON[k]=!ON[k];
+  document.getElementById('btn-'+k).classList.toggle('on',ON[k]);
+  ON[k]?map.addLayer(LY[k]):map.removeLayer(LY[k]);
 }
 
-function toggleAlim(circ){
-  const el=document.getElementById('ai-'+circ);
-  if(selecionados.has(circ)){selecionados.delete(circ);el.classList.remove('sel')}
-  else{
-    selecionados.add(circ);el.classList.add('sel');
-    if(bounds_por_alim[circ])map.fitBounds(bounds_por_alim[circ],{padding:[30,30]});
+// ── Estado ──
+let INDICE = {};         // chave → {circ,se,polo,lat,lon}
+let NAO_ENCONTRADAS = [];
+let carregados = {};     // circ → true
+let bounds_circ = {};    // circ → LatLngBounds
+let itemAtivo = null;    // código da chave selecionada atualmente
+const BASE = 'alimentadores/';
+
+// ── Render lista ──
+function renderLista(filtro=''){
+  const f = filtro.toLowerCase();
+  const lista = document.getElementById('lista');
+
+  const encontrados = Object.entries(INDICE)
+    .filter(([cod,info])=> !f || cod.includes(f) || info.se.toLowerCase().includes(f) || info.circ.toLowerCase().includes(f))
+    .sort((a,b)=>a[0].localeCompare(b[0]));
+
+  const naos = NAO_ENCONTRADAS
+    .filter(cod=> !f || cod.includes(f))
+    .sort();
+
+  document.getElementById('st-enc').textContent = encontrados.length + ' encontrados';
+  document.getElementById('st-na').textContent  = naos.length   + ' não encontrados';
+
+  lista.innerHTML =
+    (encontrados.length ? `<div class="grupo-titulo">Ativos encontrados (${encontrados.length})</div>` : '') +
+    encontrados.map(([cod,info])=>{
+      const done   = carregados[info.circ];
+      const isAtivo= itemAtivo===cod;
+      return `<div class="item${done?' carregado':''}" id="li-${cod}" onclick="selecionarAtivo('${cod}')">
+        <div class="item-dot ${done?'dot-done':'dot-ok'}"></div>
+        <div class="item-info">
+          <div class="item-cod" style="${isAtivo?'color:#ff5252':''}">${cod}</div>
+          <div class="item-sub">${info.se}</div>
+          <span class="item-tag tag-circ">${info.circ} · ${info.polo}</span>
+        </div>
+      </div>`;
+    }).join('') +
+    (naos.length ? `<div class="grupo-titulo">Não encontrados nos KMLs (${naos.length})</div>` : '') +
+    naos.map(cod=>`<div class="item nao-encontrado">
+      <div class="item-dot dot-na"></div>
+      <div class="item-info">
+        <div class="item-cod">${cod}</div>
+        <div class="item-sub">Não localizado nos alimentadores</div>
+        <span class="item-tag tag-na">não encontrado</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── Selecionar ativo ──
+async function selecionarAtivo(cod){
+  const info = INDICE[cod];
+  if(!info) return;
+  itemAtivo = cod;
+
+  const circ = info.circ;
+  const el   = document.getElementById('li-'+cod);
+
+  // Se o alimentador já está no mapa → só centralizar no ativo
+  if(carregados[circ]){
+    map.setView([info.lat,info.lon],15,{animate:true});
+    destacarAtivo(cod,info);
+    renderLista(document.getElementById('busca').value);
+    return;
   }
-  document.getElementById('exp-info').textContent=
-    selecionados.size?selecionados.size+' selecionado(s)':'Exporta todos';
+
+  // Marcar como carregando
+  if(el){ el.classList.add('carregando'); el.querySelector('.item-dot').className='item-dot dot-loading'; }
+
+  try {
+    const r = await fetch(BASE+circ+'.json?t='+Date.now());
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    carregados[circ] = true;
+    renderAlimentador(circ, d);
+    destacarAtivo(cod,info);
+    // Zoom para o ativo selecionado
+    map.setView([info.lat,info.lon],14,{animate:true});
+    atualizarLoadedBar();
+  } catch(e){
+    showToast('Erro ao carregar '+circ+': '+e.message);
+  } finally {
+    renderLista(document.getElementById('busca').value);
+  }
 }
 
-function renderAlim(circ,d){
-  const allPts=[];
+// ── Renderizar alimentador no mapa ──
+let alvoMarkers = {}; // cod → marker (para destacar)
+
+function renderAlimentador(circ, d){
+  const pts=[];
   d.t1.forEach(l=>{
-    const pts=l.map(c=>[c[1],c[0]]);
-    L.polyline(pts,{color:'#b71c1c',weight:3,opacity:.85}).addTo(layers.t1);
-    pts.forEach(p=>allPts.push(p));
+    const p=l.map(c=>[c[1],c[0]]);
+    L.polyline(p,{color:'#e53935',weight:2.5,opacity:.9}).addTo(LY.t1);
+    p.forEach(x=>pts.push(x));
   });
   d.t2.forEach(l=>{
-    const pts=l.map(c=>[c[1],c[0]]);
-    L.polyline(pts,{color:'#bf360c',weight:2,opacity:.8}).addTo(layers.t2);
-    pts.forEach(p=>allPts.push(p));
+    const p=l.map(c=>[c[1],c[0]]);
+    L.polyline(p,{color:'#fb8c00',weight:1.8,opacity:.85}).addTo(LY.t2);
+    p.forEach(x=>pts.push(x));
   });
   d.chaves.forEach(c=>{
-    const isAlvo=CHAVES_ALVO.has(c.nome);
+    const isAlvo = isAtivoAlvo(c.nome);
     if(isAlvo){
-      const pop=`<b>${c.nome}</b><br><span style="color:#ff1744;font-weight:700">⚑ Chave da lista</span><br>${circ} / ${d.se}`;
-      L.circleMarker([c.lat,c.lon],{radius:8,fillColor:'#ff1744',color:'#fff',weight:2,fillOpacity:1})
-        .bindPopup(pop).addTo(layers.alvo);
+      const m = L.circleMarker([c.lat,c.lon],{
+        radius:9,fillColor:'#ff1744',color:'#fff',weight:2.5,fillOpacity:1
+      }).bindPopup(popupAlvo(c.nome,d)).addTo(LY.alvo);
+      alvoMarkers[c.nome]=m;
     } else {
-      const pop=`<b>${c.nome}</b><br>Tipo: ${c.tipo}<br>${circ} / ${d.se}`;
-      L.circleMarker([c.lat,c.lon],{radius:4,fillColor:'#6a1b9a',color:'#fff',weight:1.5,fillOpacity:.8})
-        .bindPopup(pop).addTo(layers.ch);
+      L.circleMarker([c.lat,c.lon],{
+        radius:4,fillColor:'#7e57c2',color:'#fff',weight:1.5,fillOpacity:.8
+      }).bindPopup(`<b>${c.nome}</b><br>Chave · ${circ}`).addTo(LY.ch);
     }
-    allPts.push([c.lat,c.lon]);
+    pts.push([c.lat,c.lon]);
   });
   d.trafos.forEach(t=>{
-    const pop=`<b>Trafo ${t.nome}</b><br>${circ} / ${d.se}`;
-    L.circleMarker([t.lat,t.lon],{radius:3,fillColor:'#0d47a1',color:'#fff',weight:1,fillOpacity:.8})
-      .bindPopup(pop).addTo(layers.tr);
-    allPts.push([t.lat,t.lon]);
+    L.circleMarker([t.lat,t.lon],{
+      radius:3,fillColor:'#1e88e5',color:'#fff',weight:1,fillOpacity:.8
+    }).bindPopup(`<b>Trafo ${t.nome}</b><br>${circ}`).addTo(LY.tr);
+    pts.push([t.lat,t.lon]);
   });
-  if(allPts.length) bounds_por_alim[circ]=L.latLngBounds(allPts);
+  if(pts.length) bounds_circ[circ]=L.latLngBounds(pts);
 }
 
-function renderLista(f){
-  const circs=Object.keys(dados).filter(c=>!f||c.toLowerCase().includes(f)||dados[c].se.toLowerCase().includes(f));
-  document.getElementById('s-alim').textContent=circs.length+' alim.';
-  document.getElementById('lista').innerHTML=circs.map(c=>{
-    const d=dados[c];
-    const nalvo=d.chaves.filter(ch=>CHAVES_ALVO.has(ch.nome)).length;
-    return `<div class="alim${selecionados.has(c)?' sel':''}" id="ai-${c}" onclick="toggleAlim('${c}')">
-      <div class="alim-id">${c}</div>
-      <div class="alim-se">${d.se}</div>
-      <div class="alim-tags">
-        <span class="tag polo">${d.polo}</span>
-        <span class="tag t1">T1:${d.t1.length}</span>
-        <span class="tag t2">T2:${d.t2.length}</span>
-        <span class="tag tr">Trafos:${d.trafos.length}</span>
-        <span class="tag ch">⚑${nalvo} alvo</span>
-      </div>
-    </div>`;
-  }).join('');
+function popupAlvo(cod,d){
+  const info=INDICE[cod]||{};
+  return `<div style="min-width:160px">
+    <div style="font-weight:700;font-size:13px;color:#ff5252">⚑ Ativo de referência</div>
+    <div style="color:#aaa;font-size:10px;margin:3px 0 6px">${d.circ} · ${d.se}</div>
+    <div style="font-size:11px;line-height:1.8">
+      <b>Código:</b> ${cod}<br>
+      <b>Polo:</b> ${d.polo}<br>
+      <b>Lat:</b> ${info.lat||''}<br>
+      <b>Lon:</b> ${info.lon||''}
+    </div>
+  </div>`;
 }
 
-// EXPORT KML
-function exportar(fmt){
-  const alvos=selecionados.size?[...selecionados]:Object.keys(dados);
-  if(fmt==='kml'){
-    let k='<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n<name>Rede MT — Energisa Tocantins</name>\n';
-    k+='<Style id="t1"><LineStyle><color>ff1c1cb7</color><width>3</width></LineStyle></Style>\n';
-    k+='<Style id="t2"><LineStyle><color>ff0c36bf</color><width>2</width></LineStyle></Style>\n';
-    k+='<Style id="ch"><IconStyle><color>ff9a1b6a</color><scale>0.6</scale></IconStyle></Style>\n';
-    k+='<Style id="alvo"><IconStyle><color>ff4417ff</color><scale>1.1</scale></IconStyle></Style>\n';
-    k+='<Style id="tr"><IconStyle><color>ffa1470d</color><scale>0.5</scale></IconStyle></Style>\n';
-    for(const c of alvos){
-      const d=dados[c]; if(!d) continue;
-      k+=`<Folder><name>${c} — ${d.se}</name>\n`;
-      k+=`<Folder><name>Trechos T1</name>\n`;
-      d.t1.forEach((l,i)=>{k+=`<Placemark><name>T1_${i+1}</name><styleUrl>#t1</styleUrl><LineString><coordinates>${l.map(p=>p[0]+','+p[1]+',0').join(' ')}</coordinates></LineString></Placemark>\n`;});
-      k+=`</Folder><Folder><name>Trechos T2</name>\n`;
-      d.t2.forEach((l,i)=>{k+=`<Placemark><name>T2_${i+1}</name><styleUrl>#t2</styleUrl><LineString><coordinates>${l.map(p=>p[0]+','+p[1]+',0').join(' ')}</coordinates></LineString></Placemark>\n`;});
-      k+=`</Folder><Folder><name>Chaves</name>\n`;
-      d.chaves.forEach(ch=>{const isA=CHAVES_ALVO.has(ch.nome);k+=`<Placemark><name>${ch.nome}</name><styleUrl>${isA?'#alvo':'#ch'}</styleUrl><Point><coordinates>${ch.lon},${ch.lat},0</coordinates></Point></Placemark>\n`;});
-      k+=`</Folder><Folder><name>Transformadores</name>\n`;
-      d.trafos.forEach(t=>{k+=`<Placemark><name>${t.nome}</name><styleUrl>#tr</styleUrl><Point><coordinates>${t.lon},${t.lat},0</coordinates></Point></Placemark>\n`;});
-      k+=`</Folder></Folder>\n`;
-    }
-    k+='</Document>\n</kml>';
-    baixar('rede_mt.kml',k,'application/vnd.google-earth.kml+xml');
-  } else {
-    const rows=[['TIPO','ALIMENTADOR','SE','POLO','CODIGO','LAT','LON','CHAVE_ALVO']];
-    for(const c of alvos){
-      const d=dados[c]; if(!d) continue;
-      d.chaves.forEach(ch=>rows.push(['CHAVE',c,d.se,d.polo,ch.nome,ch.lat,ch.lon,CHAVES_ALVO.has(ch.nome)?'SIM':'NAO']));
-      d.trafos.forEach(t=>rows.push(['TRAFO',c,d.se,d.polo,t.nome,t.lat,t.lon,'']));
-    }
-    baixar('rede_mt.csv','\uFEFF'+rows.map(r=>r.join(';')).join('\n'),'text/csv');
+function destacarAtivo(cod,info){
+  // Abrir popup do ativo
+  const m=alvoMarkers[cod];
+  if(m) m.openPopup();
+}
+
+function isAtivoAlvo(cod){
+  return !!INDICE[cod];
+}
+
+// ── Loaded bar ──
+function atualizarLoadedBar(){
+  const bar=document.getElementById('loaded-bar');
+  const circs=Object.keys(carregados);
+  if(!circs.length){
+    bar.innerHTML='<span style="color:#555;font-size:10px;">Nenhum alimentador carregado</span>';
+    return;
   }
+  bar.innerHTML=circs.map(c=>`<span class="loaded-chip" onclick="zoomAlimentador('${c}')" title="Zoom: ${c}">${c}</span>`).join('')
+    +`<button id="btn-limpar" onclick="limparTudo()">Limpar</button>`;
 }
 
-function baixar(nome,conteudo,tipo){
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([conteudo],{type:tipo}));
-  a.download=nome; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+function zoomAlimentador(circ){
+  if(bounds_circ[circ]) map.fitBounds(bounds_circ[circ],{padding:[20,20]});
 }
 
-// INIT
-document.getElementById('busca').addEventListener('input',e=>renderLista(e.target.value));
+function limparTudo(){
+  ['t1','t2','ch','tr','alvo'].forEach(k=>LY[k].clearLayers());
+  carregados={};
+  bounds_circ={};
+  alvoMarkers={};
+  itemAtivo=null;
+  atualizarLoadedBar();
+  renderLista(document.getElementById('busca').value);
+}
 
-fetch('dados_mapa.json').then(r=>r.json()).then(d=>{
-  dados=d;
-  document.getElementById('lfill').style.width='20%';
-  const circs=Object.keys(d);
-  let tot_t=0,tot_tr=0,tot_ch=0;
-  circs.forEach(c=>{tot_t+=d[c].t1.length+d[c].t2.length;tot_tr+=d[c].trafos.length;tot_ch+=d[c].chaves.length;});
-  document.getElementById('s-trechos').textContent=(tot_t).toLocaleString('pt-BR')+' trec.';
-  document.getElementById('s-trafos').textContent=(tot_tr).toLocaleString('pt-BR')+' trafos';
-  document.getElementById('s-chaves').textContent=(tot_ch).toLocaleString('pt-BR')+' chaves';
+// ── Toast ──
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';
+    t.style.cssText='position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;z-index:9999';
+    document.body.appendChild(t);}
+  t.textContent=msg; t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
 
-  let i=0;
-  function next(){
-    if(i>=circs.length){
-      document.getElementById('loading').style.display='none';
-      renderLista('');
-      const all=Object.values(bounds_por_alim);
-      if(all.length){let b=all[0];all.forEach(x=>{b=b.extend(x);});map.fitBounds(b,{padding:[20,20]});}
-      return;
-    }
-    const c=circs[i];
-    document.getElementById('loading-sub').textContent='Carregando '+c+'…';
-    document.getElementById('lfill').style.width=(20+80*(i+1)/circs.length)+'%';
-    renderAlim(c,d[c]);
-    i++; requestAnimationFrame(next);
-  }
-  requestAnimationFrame(next);
+function filtrar(v){ renderLista(v); }
+
+// ── INIT ──
+fetch('indice.json').then(r=>r.json()).then(d=>{
+  INDICE           = d.chaves||{};
+  NAO_ENCONTRADAS  = d.nao_encontradas||[];
+  renderLista();
+  atualizarLoadedBar();
 }).catch(e=>{
-  document.getElementById('loading').innerHTML='<b>Erro ao carregar:</b><br>'+e.message;
+  document.getElementById('lista').innerHTML=
+    '<div style="padding:20px;color:#666;font-size:12px;">Erro ao carregar índice: '+e.message+'</div>';
 });
 </script>
 </body>
